@@ -2,9 +2,8 @@ from flask_restful import Resource, reqparse
 import json
 from flask import request
 from utils.database_connection import DatabaseConnection
+from utils.auth import validate_token
 
-def is_valid_token(token):
-    return token == 'abcd1234'
 
 class ProductsResource(Resource):
     def __init__(self):
@@ -16,14 +15,13 @@ class ProductsResource(Resource):
         self.parser = reqparse.RequestParser()
         
     def get(self, product_id=None):
-        args = self.parser.parse_args()
         token = request.headers.get('Authorization')
         category_filter = request.args.get('category')
       
         if not token:
             return { 'message': 'Unauthorized acces token not found'}, 401
 
-        if not is_valid_token(token):
+        if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
 
         if category_filter:
