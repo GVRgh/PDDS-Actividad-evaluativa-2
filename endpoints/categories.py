@@ -1,10 +1,7 @@
-from flask import Flask, request
-from flask_restful import Resource, Api, reqparse
-import json
+from flask import request
+from flask_restful import Resource, reqparse
 from utils.database_connection import DatabaseConnection
-
-def is_valid_token(token):
-    return token == 'abcd1234'
+from utils.auth import validate_token
 
 class CategoriesResource(Resource):
     def __init__(self):
@@ -19,7 +16,7 @@ class CategoriesResource(Resource):
         token = request.headers.get('Authorization')
         if not token:
             return { 'message': 'Unauthorized acces token not found'}, 401
-        if not is_valid_token(token):
+        if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
 
         if category_id is not None:
@@ -35,7 +32,7 @@ class CategoriesResource(Resource):
         token = request.headers.get('Authorization')
         if not token:
             return { 'message': 'Unauthorized acces token not found'}, 401
-        if not is_valid_token(token):
+        if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
 
         self.parser.add_argument('name', type=str, required=True, help='Name of the category')
@@ -66,7 +63,7 @@ class CategoriesResource(Resource):
         token = request.headers.get('Authorization')
         if not token:
             return { 'message': 'Unauthorized acces token not found'}, 401
-        if not is_valid_token(token):
+        if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
 
         args = self.parser.parse_args()
