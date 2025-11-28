@@ -2,9 +2,7 @@ from flask_restful import Resource, reqparse
 import json
 from flask import request
 from utils.database_connection import DatabaseConnection
-
-def is_valid_token(token):
-    return token == 'abcd1234'
+from utils.auth import validate_token
 
 
 class FavoritesResource(Resource):
@@ -20,7 +18,7 @@ class FavoritesResource(Resource):
         if not token:
             return {'message': 'Unauthorized access token not found'}, 401
 
-        if not is_valid_token(token):
+        if not validate_token(token):
             return {'message': 'Unauthorized invalid token'}, 401
 
         return self.db.get_favorites(), 200
@@ -33,7 +31,7 @@ class FavoritesResource(Resource):
         if not token:
             return { 'message': 'Unauthorized acces token not found'}, 401
 
-        if not is_valid_token(token):
+        if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
 
 
@@ -52,7 +50,7 @@ class FavoritesResource(Resource):
         if not token:
             return { 'message': 'Unauthorized acces token not found'}, 401
 
-        if not is_valid_token(token):
+        if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
 
         parser = reqparse.RequestParser()
