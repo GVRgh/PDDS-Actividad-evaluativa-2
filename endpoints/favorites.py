@@ -1,69 +1,62 @@
 from flask_restful import Resource, reqparse
-import json
 from flask import request
-from utils.database_connection import DatabaseConnection
+from repositories.favorite_repository import FavoriteRepository
 from utils.auth import validate_token
-
 
 class FavoritesResource(Resource):
     def __init__(self):
-        self.db = DatabaseConnection('favorites.json')
-        self.db.connect()
-
-        self.favorites = self.db.get_favorites()
+        self.repo = FavoriteRepository('db.json')
 
     def get(self):
         token = request.headers.get('Authorization')
-        
         if not token:
             return {'message': 'Unauthorized access token not found'}, 401
-
         if not validate_token(token):
             return {'message': 'Unauthorized invalid token'}, 401
 
-        return self.db.get_favorites(), 200
+        return self.repo.all(), 200
 
     def post(self):
         token = request.headers.get('Authorization')
+        if not token:
+            return {'message': 'Unauthorized access token not found'}, 401
+        if not validate_token(token):
+            return {'message': 'Unauthorized invalid token'}, 401
+
         parser = reqparse.RequestParser()
         parser.add_argument('user_id', type=int, required=True, help='User ID')
         parser.add_argument('product_id', type=int, required=True, help='Product ID')
-        if not token:
-            return { 'message': 'Unauthorized acces token not found'}, 401
-
-        if not validate_token(token):
-           return { 'message': 'Unauthorized invalid token'}, 401
-
-
         args = parser.parse_args()
-        new_favorite = {
-            'user_id': args['user_id'],
-            'product_id': args['product_id']
-        }
 
-        self.favorites.append(new_favorite)
-        self.db.add_favorite(new_favorite)
-        return {'message': 'Product added to favorites', 'favorite': new_favorite}, 201
+        user_id = args['user_id']
+        product_id = args['product_id']
+
+        try:
+            new_fav = self.repo.add(user_id, product_id)
+        except ValueError as ve:
+            return {'message': str(ve)}, 400
+        except Exception as e:
+            return {'message': 'Could not add favorite', 'detail': str(e)}, 500
+
+        return {'message': 'Product added to favorites', 'favorite': new_fav}, 201
 
     def delete(self):
         token = request.headers.get('Authorization')
         if not token:
-            return { 'message': 'Unauthorized acces token not found'}, 401
-
+            return {'message': 'Unauthorized access token not found'}, 401
         if not validate_token(token):
-           return { 'message': 'Unauthorized invalid token'}, 401
+            return {'message': 'Unauthorized invalid token'}, 401
 
         parser = reqparse.RequestParser()
         parser.add_argument('user_id', type=int, required=True, help='User ID')
         parser.add_argument('product_id', type=int, required=True, help='Product ID')
-
         args = parser.parse_args()
+
         user_id = args['user_id']
         product_id = args['product_id']
 
-        # Encuentra y elimina el producto de favoritos
-        self.favorites = [favorite for favorite in self.favorites
-                          if not (favorite['user_id'] == user_id and favorite['product_id'] == product_id)]
-        self.db.save_favorites(self.favorites)
+        removed = self.repo.remove(user_id, product_id)
+        if not removed:
+            return {'message': 'Favorite not found'}, 404
 
         return {'message': 'Product removed from favorites'}, 200
