@@ -1,16 +1,11 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from utils.database_connection import DatabaseConnection
+from repositories.category_repository import CategoryRepository
 from utils.auth import validate_token
 
 class CategoriesResource(Resource):
     def __init__(self):
-
-        self.db = DatabaseConnection('db.json')
-        self.db.connect()
-
-        self.categories_data = self.db.get_categories()
-        self.parser = reqparse.RequestParser()
+        self.repo = CategoryRepository()
 
     def get(self, category_id=None):
         token = request.headers.get('Authorization')
@@ -19,14 +14,13 @@ class CategoriesResource(Resource):
         if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
 
-        if category_id is not None:
-            category = next((p for p in self.categories_data if p['id'] == category_id), None)
-            if category is not None:
-                return category
-            else:
+        if category_id:
+            category = self.repo.get_by_id(category_id)
+            if not category:
                 return {'message': 'Category not found'}, 404
+            return category, 200
          
-        return self.categories_data 
+        return self.repo.get_all(), 200 
 
     def post(self):
         token = request.headers.get('Authorization')
@@ -34,30 +28,20 @@ class CategoriesResource(Resource):
             return { 'message': 'Unauthorized acces token not found'}, 401
         if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
-
-        self.parser.add_argument('name', type=str, required=True, help='Name of the category')
+    
+        parser = reqparse.RequestParser()
+        parser.add_argument('name', type=str, required=True)
+        args = parser.parse_args()
  
-        args = self.parser.parse_args()
-        print("*****",args)
-        new_category_name = args['name']
-        if not new_category_name:
-            return {'message': 'Category name is required'}, 400
+        try:
+            category = self.repo.add(args['name'])
+        except ValueError as e:
+            return {'message': str(e)}, 400
 
-        categories = self.categories_data
-        if new_category_name in categories:
-            return {'message': 'Category already exists'}, 400
-
-        new_category = {
-                'id': len(self.categories_data) + 1,
-                'name': new_category_name
-        }
-
-        categories.append(new_category)
-        self.categories_data = categories
-        
-        self.db.add_category(new_category)
-
-        return {'message': 'Category added successfully'}, 201
+        return {
+            'message': 'Category added successfully',
+            'category': category
+        }, 201
 
     def delete(self):
         token = request.headers.get('Authorization')
@@ -66,22 +50,13 @@ class CategoriesResource(Resource):
         if not validate_token(token):
            return { 'message': 'Unauthorized invalid token'}, 401
 
-        args = self.parser.parse_args()
-        self.parser.add_argument('name', type=str, required=True, help='Name of the category')
-        args = self.parser.parse_args()
-        category_name = args['name']
- 
-        if not category_name:
-            return {'message': 'Category name is required'}, 400
+        parser = reqparse.RequestParser()
+        parser.add_argument('name', type=str, required=True)
+        args = parser.parse_args()
 
-        category_to_remove = next((cat for cat in self.categories_data if cat["name"] == category_name), None)
-
-        if category_to_remove is None:
+        removed = self.repo.remove_by_name(args['name'])
+        if not removed:
             return {'message': 'Category not found'}, 404
-        else:
-            categories = [cat for cat in self.categories_data if cat["name"] != category_to_remove]
-            self.categories_data = categories
-            self.db.remove_category(category_name)
 
-            return {'message': 'Category removed successfully'}, 200
+        return {'message': 'Category removed successfully'}, 200
 
