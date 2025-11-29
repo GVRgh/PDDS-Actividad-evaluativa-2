@@ -3,6 +3,9 @@ from flask_restful import Resource, reqparse
 from repositories.category_repository import CategoryRepository
 from utils.auth import validate_token
 
+UNAUTHORIZED_NO_TOKEN = "Unauthorized access token not found"
+UNAUTHORIZED_INVALID_TOKEN = "Unauthorized invalid token"
+
 class CategoriesResource(Resource):
     def __init__(self):
         self.repo = CategoryRepository()
@@ -10,9 +13,9 @@ class CategoriesResource(Resource):
     def get(self, category_id=None):
         token = request.headers.get('Authorization')
         if not token:
-            return { 'message': 'Unauthorized acces token not found'}, 401
+            return { 'message': UNAUTHORIZED_NO_TOKEN}, 401
         if not validate_token(token):
-           return { 'message': 'Unauthorized invalid token'}, 401
+           return { 'message': UNAUTHORIZED_INVALID_TOKEN}, 401
 
         if category_id:
             category = self.repo.get_by_id(category_id)
@@ -25,9 +28,9 @@ class CategoriesResource(Resource):
     def post(self):
         token = request.headers.get('Authorization')
         if not token:
-            return { 'message': 'Unauthorized acces token not found'}, 401
+            return { 'message': UNAUTHORIZED_NO_TOKEN}, 401
         if not validate_token(token):
-           return { 'message': 'Unauthorized invalid token'}, 401
+           return { 'message': UNAUTHORIZED_INVALID_TOKEN}, 401
     
         parser = reqparse.RequestParser()
         parser.add_argument('name', type=str, required=True)
@@ -46,9 +49,9 @@ class CategoriesResource(Resource):
     def delete(self):
         token = request.headers.get('Authorization')
         if not token:
-            return { 'message': 'Unauthorized acces token not found'}, 401
+            return { 'message': UNAUTHORIZED_NO_TOKEN}, 401
         if not validate_token(token):
-           return { 'message': 'Unauthorized invalid token'}, 401
+           return { 'message': UNAUTHORIZED_INVALID_TOKEN}, 401
 
         parser = reqparse.RequestParser()
         parser.add_argument('name', type=str, required=True)

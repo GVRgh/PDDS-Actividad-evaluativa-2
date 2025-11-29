@@ -3,6 +3,9 @@ from flask import request
 from repositories.favorite_repository import FavoriteRepository
 from utils.auth import validate_token
 
+UNAUTHORIZED_NO_TOKEN = "Unauthorized access token not found"
+UNAUTHORIZED_INVALID_TOKEN = "Unauthorized invalid token"
+
 class FavoritesResource(Resource):
     def __init__(self):
         self.repo = FavoriteRepository('db.json')
@@ -10,18 +13,18 @@ class FavoritesResource(Resource):
     def get(self):
         token = request.headers.get('Authorization')
         if not token:
-            return {'message': 'Unauthorized access token not found'}, 401
+            return {'message': UNAUTHORIZED_NO_TOKEN}, 401
         if not validate_token(token):
-            return {'message': 'Unauthorized invalid token'}, 401
+            return {'message': UNAUTHORIZED_INVALID_TOKEN}, 401
 
         return self.repo.all(), 200
 
     def post(self):
         token = request.headers.get('Authorization')
         if not token:
-            return {'message': 'Unauthorized access token not found'}, 401
+            return {'message': UNAUTHORIZED_NO_TOKEN}, 401
         if not validate_token(token):
-            return {'message': 'Unauthorized invalid token'}, 401
+            return {'message': UNAUTHORIZED_INVALID_TOKEN}, 401
 
         parser = reqparse.RequestParser()
         parser.add_argument('user_id', type=int, required=True, help='User ID')
@@ -43,9 +46,9 @@ class FavoritesResource(Resource):
     def delete(self):
         token = request.headers.get('Authorization')
         if not token:
-            return {'message': 'Unauthorized access token not found'}, 401
+            return {'message': UNAUTHORIZED_NO_TOKEN}, 401
         if not validate_token(token):
-            return {'message': 'Unauthorized invalid token'}, 401
+            return {'message': UNAUTHORIZED_INVALID_TOKEN}, 401
 
         parser = reqparse.RequestParser()
         parser.add_argument('user_id', type=int, required=True, help='User ID')

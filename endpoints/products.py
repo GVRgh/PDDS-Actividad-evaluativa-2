@@ -3,6 +3,8 @@ from flask import request
 from repositories.product_repository import ProductRepository
 from utils.auth import validate_token
 
+UNAUTHORIZED_NO_TOKEN = "Unauthorized access token not found"
+UNAUTHORIZED_INVALID_TOKEN = "Unauthorized invalid token"
 
 class ProductsResource(Resource):
     def __init__(self):
@@ -20,10 +22,10 @@ class ProductsResource(Resource):
         category_filter = request.args.get('category')
       
         if not token:
-            return { 'message': 'Unauthorized acces token not found'}, 401
+            return { 'message': UNAUTHORIZED_NO_TOKEN}, 401
 
         if not validate_token(token):
-           return { 'message': 'Unauthorized invalid token'}, 401
+           return { 'message': UNAUTHORIZED_INVALID_TOKEN}, 401
 
         if category_filter:
             filtered_products = self.repo.filter_by_category(category_filter)
@@ -41,10 +43,10 @@ class ProductsResource(Resource):
     def post(self):
         token = request.headers.get('Authorization')
         if not token:
-            return {'message': 'Unauthorized access token not found'}, 401
+            return {'message': UNAUTHORIZED_NO_TOKEN}, 401
 
         if not validate_token(token):
-            return {'message': 'Unauthorized invalid token'}, 401
+            return {'message': UNAUTHORIZED_INVALID_TOKEN}, 401
         
         args = self.post_parser.parse_args()
         product = {
