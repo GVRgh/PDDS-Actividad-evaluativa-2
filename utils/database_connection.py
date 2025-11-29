@@ -71,6 +71,31 @@ class DatabaseConnection:
                 json.dump(self.data, json_file, indent=4)
         else:
             print("Error: something went wrong adding the favorite product")
+    
+    def save_favorites(self, favorites_list):
+
+        if self.data is None:
+            self.data = {}
+        self.data['favorites'] = favorites_list
+        try:
+            with open(self.json_file_path, 'w') as json_file:
+                json.dump(self.data, json_file, indent=4)
+        except Exception as e:
+            print("Error saving favorites:", e)
+
+    def remove_favorite(self, user_id, product_id):
+        
+        if self.data:
+            favorites = self.data.get('favorites', [])
+            initial_len = len(favorites)
+            favorites = [fav for fav in favorites if not (fav.get('user_id') == user_id and fav.get('product_id') == product_id)]
+            self.data['favorites'] = favorites
+            with open(self.json_file_path, 'w') as json_file:
+                json.dump(self.data, json_file, indent=4)
+            return len(favorites) != initial_len
+        else:
+            print("Error: something went wrong removing the favorite")
+            return False
 
 
 
